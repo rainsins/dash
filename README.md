@@ -27,7 +27,7 @@ Video2Dash是一个强大的命令行工具，专为将视频批量转换为DASH
 ## 系统要求 🖥️
 
 - 操作系统: Windows 10/11
-- CPU: 支持Intel Quick Sync Video的处理器（如9600K）
+- CPU: 支持Intel Quick Sync Video的处理器（如9700K）
 - GPU: 支持视频加速的显卡（如Intel Arc A770）
 - 内存: 8GB+（推荐32GB）
 - 依赖工具:
