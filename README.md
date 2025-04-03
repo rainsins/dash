@@ -36,7 +36,7 @@ Video2Dash是一个强大的命令行工具，专为将视频批量转换为DASH
 
 ## 安装 📦
 
-1. 从[发布页面](https://github.com/yourusername/video2dash/releases)下载最新版本的Video2Dash.exe
+1. 从[发布页面](https://github.com/rainsins/dash/releases)下载最新版本的dash.exe
 2. 将可执行文件放置在系统PATH中，或直接在文件所在目录使用
 
 ## 使用方法 🚀
@@ -44,7 +44,7 @@ Video2Dash是一个强大的命令行工具，专为将视频批量转换为DASH
 ### 基本用法
 
 ```bash
-video2dash.exe [选项] <输入路径>
+dash.exe [选项] <输入路径>
 ```
 
 ### 命令行选项
@@ -65,25 +65,25 @@ video2dash.exe [选项] <输入路径>
 **基本转换:**
 
 ```bash
-video2dash.exe D:\Videos
+dash.exe D:\Videos
 ```
 
 **指定分片时间和并行线程:**
 
 ```bash
-video2dash.exe -t 8 -p 4 D:\Videos
+dash.exe -t 8 -p 4 D:\Videos
 ```
 
 **自定义服务器URL:**
 
 ```bash
-video2dash.exe --serve ["https://server1.com","https://server2.com"] D:\Videos
+dash.exe --serve ["https://server1.com","https://server2.com"] D:\Videos
 ```
 
 **将生成的文件复制到指定位置:**
 
 ```bash
-video2dash.exe --output E:\Converted --copy true D:\Videos
+dash.exe --output E:\Converted --copy true D:\Videos
 ```
 
 ## 工作流程 🔄
