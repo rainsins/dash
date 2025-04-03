@@ -54,13 +54,11 @@ jobs:
           echo "ASSET_PATH=target/${{ matrix.platform.target }}/release/${{ matrix.platform.asset_name }}.tar.gz" >> $GITHUB_ENV
       
       - name: Upload binaries to release
-        permissions:
-          contents: write
         uses: softprops/action-gh-release@v1
         with:
           files: ${{ env.ASSET_PATH }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
   publish_crates:
     name: Publish to crates.io
