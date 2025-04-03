@@ -15,20 +15,20 @@ jobs:
           - name: Windows x64
             os: windows-latest
             target: x86_64-pc-windows-msvc
-            binary_name: your_program.exe
-            asset_name: your_program-windows-x64
+            binary_name: dash.exe
+            asset_name: dash-windows-x64
 
           - name: macOS x64
             os: macos-latest
             target: x86_64-apple-darwin
-            binary_name: your_program
-            asset_name: your_program-macos-x64
+            binary_name: dash
+            asset_name: dash-macos-x64
 
           - name: Linux x64
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            binary_name: your_program
-            asset_name: your_program-linux-x64
+            binary_name: dash
+            asset_name: dash-linux-x64
 
     steps:
       - uses: actions/checkout@v3
