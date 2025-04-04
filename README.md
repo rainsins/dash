@@ -2,15 +2,13 @@
 
 ## 简介 🌟
 
-Video2Dash是一个强大的命令行工具，专为将视频批量转换为DASH流格式而设计，支持AV1编码优化。该工具会自动遍历指定文件夹中的所有视频，并为每个视频创建相应的DASH流文件，便于在浏览器中通过dash.js和artplayer.js播放。
+Video2Dash是一个专为将视频批量转换为DASH流格式而设计的命令行工具，支持AV1编码优化。该工具会自动遍历指定文件夹中的所有视频，并为每个视频创建相应的DASH流文件，便于在浏览器中通过dash.js和artplayer.js播放。
 
 ## 缘起 🤡
 
 - 入手了一块A770，想让它干点事。
 - 老师的视频太大了，动辄5-6G，转成av1的节省空间。
 - ffmpeg总是跑不满这张卡，所以用QSVEncC来进行转码。
-- 学习Rust的使用和AI的使用，其实就是AI（claude）生成的😀，我就小小地改了一丢丢。
-- 这个readme页面都是AI生成的。
 
 ## 特性 ✨
 
@@ -65,25 +63,25 @@ dash.exe [选项] <输入路径>
 **基本转换:**
 
 ```bash
-dash.exe D:\Videos
+dash.exe D:/Videos
 ```
 
 **指定分片时间和并行线程:**
 
 ```bash
-dash.exe -t 8 -p 4 D:\Videos
+dash.exe -t 8 -p 4 D:/Videos
 ```
 
 **自定义服务器URL:**
 
 ```bash
-dash.exe --serve ["https://server1.com","https://server2.com"] D:\Videos
+dash.exe --serve ["https://server1.com","https://server2.com"] D:/Videos
 ```
 
 **将生成的文件复制到指定位置:**
 
 ```bash
-dash.exe --output E:\Converted --copy true D:\Videos
+dash.exe --output E:/Converted --copy true D:/Videos
 ```
 
 ## 工作流程 🔄
