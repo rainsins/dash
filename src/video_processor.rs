@@ -88,7 +88,8 @@ impl VideoProcessor {
                 "--codec", "av1",
                 "--input", self.video_path.to_str().unwrap(),
                 "--output", output_path.to_str().unwrap(),
-                "--quality", "balanced",
+                "--audio-copy",
+                "--avhw",
                 "--fallback-rc",  // 启用多级编码回退
             ])
             .status();
