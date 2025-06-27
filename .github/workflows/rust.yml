@@ -89,32 +89,6 @@ jobs:
           target: i686-pc-windows-gnu
           binary_name: dash.exe
           asset_name: dash-i686-windows-gnu.exe
-        # ===================================================================
-        # 5. 其他服务器/新兴架构 (需要交叉编译)
-        # ===================================================================
-        - name: Linux PowerPC64 (GNU)
-          os: ubuntu-latest
-          target: powerpc64le-unknown-linux-gnu
-          binary_name: dash
-          asset_name: dash-powerpc64le-linux-gnu # IBM Power 服务器
-        - name: Linux IBM Z (GNU)
-          os: ubuntu-latest
-          target: s390x-unknown-linux-gnu
-          binary_name: dash
-          asset_name: dash-s390x-linux-gnu # IBM Z 主机
-        - name: Linux RISC-V 64-bit (GNU)
-          os: ubuntu-latest
-          target: riscv64gc-unknown-linux-gnu
-          binary_name: dash
-          asset_name: dash-riscv64gc-linux-gnu # 新兴的RISC-V架构
-        # ===================================================================
-        # 6. 其他操作系统 (需要交叉编译)
-        # ===================================================================
-        - name: FreeBSD x64
-          os: ubuntu-latest # 使用Linux runner进行交叉编译
-          target: x86_64-unknown-freebsd
-          binary_name: dash
-          asset_name: dash-x86_64-freebsd
 
     steps:
       - uses: actions/checkout@v3
