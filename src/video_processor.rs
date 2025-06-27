@@ -90,7 +90,7 @@ impl VideoProcessor {
                 "--output", output_path.to_str().unwrap(),
                 "--audio-copy",
                 "--avhw",
-                "--fallback-rc",  // 启用多级编码回退
+                "--fallback-rc",
             ])
             .status();
 
