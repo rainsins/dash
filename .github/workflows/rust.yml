@@ -132,28 +132,78 @@ jobs:
       - name: Install cross-compilation tools (Linux)
         if: runner.os == 'Linux'
         run: |
+          # Update package list
           sudo apt-get update
-          sudo apt-get install -y \
-            musl-tools \
-            gcc-multilib \
-            gcc-arm-linux-gnueabihf \
-            gcc-aarch64-linux-gnu \
-            gcc-powerpc64le-linux-gnu \
-            gcc-s390x-linux-gnu \
-            gcc-riscv64-linux-gnu
+          
+          # Install musl-tools first (usually works)
+          sudo apt-get install -y musl-tools
+          
+          # Try to install multilib support
+          sudo apt-get install -y gcc-multilib || echo "gcc-multilib installation failed, continuing..."
+          
+          # Install cross-compilers with better error handling
+          # Method 1: Try installing specific versions that are available
+          if [ "${{ matrix.platform.target }}" = "aarch64-unknown-linux-gnu" ] || [ "${{ matrix.platform.target }}" = "aarch64-unknown-linux-musl" ]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu || {
+              echo "Failed to install gcc-aarch64-linux-gnu, trying alternative approach..."
+              # Install cross-compilation toolchain using cross
+              cargo install cross --git https://github.com/cross-rs/cross
+            }
+          fi
+          
+          if [ "${{ matrix.platform.target }}" = "armv7-unknown-linux-gnueabihf" ]; then
+            sudo apt-get install -y gcc-arm-linux-gnueabihf || {
+              echo "Failed to install gcc-arm-linux-gnueabihf, trying alternative approach..."
+              cargo install cross --git https://github.com/cross-rs/cross
+            }
+          fi
+          
+          if [ "${{ matrix.platform.target }}" = "powerpc64le-unknown-linux-gnu" ]; then
+            sudo apt-get install -y gcc-powerpc64le-linux-gnu || echo "gcc-powerpc64le-linux-gnu not available"
+          fi
+          
+          if [ "${{ matrix.platform.target }}" = "s390x-unknown-linux-gnu" ]; then
+            sudo apt-get install -y gcc-s390x-linux-gnu || echo "gcc-s390x-linux-gnu not available"
+          fi
+          
+          if [ "${{ matrix.platform.target }}" = "riscv64gc-unknown-linux-gnu" ]; then
+            sudo apt-get install -y gcc-riscv64-linux-gnu || echo "gcc-riscv64-linux-gnu not available"
+          fi
 
-      # 4. Build the binary
+      # 4. Install cross for problematic targets
+      - name: Install cross tool
+        if: runner.os == 'Linux' && (contains(matrix.platform.target, 'aarch64') || contains(matrix.platform.target, 'armv7') || matrix.platform.experimental)
+        run: |
+          cargo install cross --git https://github.com/cross-rs/cross
+
+      # 5. Build the binary (with fallback to cross for problematic targets)
       - name: Build
-        run: cargo build --verbose --release --target ${{ matrix.platform.target }}
+        run: |
+          # Try regular cargo build first
+          if cargo build --verbose --release --target ${{ matrix.platform.target }}; then
+            echo "Build successful with cargo"
+          elif command -v cross &> /dev/null; then
+            echo "Falling back to cross for target ${{ matrix.platform.target }}"
+            cross build --verbose --release --target ${{ matrix.platform.target }}
+          else
+            echo "Both cargo and cross failed for target ${{ matrix.platform.target }}"
+            exit 1
+          fi
         # Use the 'experimental' flag from the matrix to allow certain builds to fail
         continue-on-error: ${{ matrix.platform.experimental || false }}
 
-      # 5. Package the binary into a compressed archive (.zip or .tar.gz)
+      # 6. Package the binary into a compressed archive (.zip or .tar.gz)
       - name: Package binary
         shell: bash
         run: |
           # Define the source path for the binary
           SOURCE_PATH="target/${{ matrix.platform.target }}/release/${{ matrix.platform.binary_name }}"
+          
+          # Check if binary exists
+          if [ ! -f "$SOURCE_PATH" ]; then
+            echo "Binary not found at $SOURCE_PATH"
+            exit 1
+          fi
           
           # Define the name of the final archive file
           if [[ "${{ runner.os }}" == "Windows" ]]; then
@@ -167,21 +217,25 @@ jobs:
           # Store the archive name for the next step
           echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
 
-      # 6. Upload the packaged binary as a build artifact
+      # 7. Upload the packaged binary as a build artifact
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.platform.target }}
           path: ${{ env.ARCHIVE_NAME }}
+        # Only upload if the build was successful
+        if: success()
 
   # ===================================================================
   # JOB 2: Create a single GitHub Release after all builds are done
   # ===================================================================
   release:
     name: Create GitHub Release
-    # This job runs only after all 'build' jobs have successfully completed
+    # This job runs only after all 'build' jobs have completed (successful or failed)
     needs: build
     runs-on: ubuntu-latest
+    # Always run the release job, even if some builds failed
+    if: always()
     # This job needs write permissions to create a release
     permissions:
       contents: write
