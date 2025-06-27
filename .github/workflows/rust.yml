@@ -5,11 +5,13 @@ on:
     tags:
       - 'v*'
 
+      
 jobs:
   build:
     name: Build ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.os }}
     strategy:
+      fail-fast: false # 允许部分构建失败
       matrix:
         platform:
         # ===================================================================
@@ -21,7 +23,7 @@ jobs:
           binary_name: dash.exe
           asset_name: dash-x86_64-windows-msvc.exe
         - name: macOS x64 (Intel)
-          os: macos-latest
+          os: macos-13 # 使用 Intel 芯片的 runner
           target: x86_64-apple-darwin
           binary_name: dash
           asset_name: dash-x86_64-apple-darwin
@@ -34,7 +36,7 @@ jobs:
           os: ubuntu-latest
           target: x86_64-unknown-linux-musl
           binary_name: dash
-          asset_name: dash-x86_64-linux-musl # 适合静态链接和容器环境
+          asset_name: dash-x86_64-linux-musl
         # ===================================================================
         # 2. 主流ARM平台 (ARM64 / AArch64)
         # ===================================================================
@@ -42,22 +44,22 @@ jobs:
           os: windows-latest
           target: aarch64-pc-windows-msvc
           binary_name: dash.exe
-          asset_name: dash-aarch64-windows-msvc.exe # 适用于Windows on ARM设备
+          asset_name: dash-aarch64-windows-msvc.exe
         - name: macOS ARM64 (Apple Silicon)
-          os: macos-14 # 明确指定支持ARM64的runner
+          os: macos-latest # GitHub 现在默认使用 M1 runner
           target: aarch64-apple-darwin
           binary_name: dash
-          asset_name: dash-aarch64-apple-darwin # 适用于 M1/M2/M3 等芯片
+          asset_name: dash-aarch64-apple-darwin
         - name: Linux ARM64 (GNU)
           os: ubuntu-latest
           target: aarch64-unknown-linux-gnu
           binary_name: dash
-          asset_name: dash-aarch64-linux-gnu # 适用于AWS Graviton, 树莓派4/5等
+          asset_name: dash-aarch64-linux-gnu
         - name: Linux ARM64 (musl)
           os: ubuntu-latest
           target: aarch64-unknown-linux-musl
           binary_name: dash
-          asset_name: dash-aarch64-linux-musl # ARM64静态链接版本
+          asset_name: dash-aarch64-linux-musl
         # ===================================================================
         # 3. 32位架构 (Legacy & Embedded)
         # ===================================================================
@@ -75,7 +77,7 @@ jobs:
           os: ubuntu-latest
           target: armv7-unknown-linux-gnueabihf
           binary_name: dash
-          asset_name: dash-armv7-linux-gnueabihf # 适用于树莓派2/3等老款ARM设备
+          asset_name: dash-armv7-linux-gnueabihf
         # ===================================================================
         # 4. Windows GNU 工具链 (MinGW)
         # ===================================================================
@@ -89,29 +91,120 @@ jobs:
           target: i686-pc-windows-gnu
           binary_name: dash.exe
           asset_name: dash-i686-windows-gnu.exe
+        # ===================================================================
+        # 5. 其他服务器/新兴架构 (需要交叉编译)
+        # ===================================================================
+        - name: Linux PowerPC64 (GNU)
+          os: ubuntu-latest
+          target: powerpc64le-unknown-linux-gnu
+          binary_name: dash
+          asset_name: dash-powerpc64le-linux-gnu # IBM Power 服务器
+        - name: Linux IBM Z (GNU)
+          os: ubuntu-latest
+          target: s390x-unknown-linux-gnu
+          binary_name: dash
+          asset_name: dash-s390x-linux-gnu # IBM Z 主机
+        - name: Linux RISC-V 64-bit (GNU)
+          os: ubuntu-latest
+          target: riscv64gc-unknown-linux-gnu
+          binary_name: dash
+          asset_name: dash-riscv64gc-linux-gnu # 新兴的RISC-V架构
+        # ===================================================================
+        # 6. 其他操作系统 (需要交叉编译)
+        # ===================================================================
+        - name: FreeBSD x64
+          os: ubuntu-latest # 使用Linux runner进行交叉编译
+          target: x86_64-unknown-freebsd
+          binary_name: dash
+          asset_name: dash-x86_64-freebsd
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
       
       - name: Setup Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          target: ${{ matrix.platform.target }}
-          override: true
+          targets: ${{ matrix.platform.target }}
+      
+      # 为某些目标安装交叉编译工具
+      - name: Install cross-compilation tools (musl)
+        if: contains(matrix.platform.target, 'musl')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+          
+      - name: Install cross-compilation tools (ARM)
+        if: contains(matrix.platform.target, 'arm') || contains(matrix.platform.target, 'aarch64')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu
+          
+      - name: Install cross-compilation tools (i686)
+        if: matrix.platform.target == 'i686-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-multilib
+          
+      - name: Install cross-compilation tools (PowerPC64)
+        if: matrix.platform.target == 'powerpc64le-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-powerpc64le-linux-gnu
+          
+      - name: Install cross-compilation tools (IBM Z)
+        if: matrix.platform.target == 's390x-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-s390x-linux-gnu
+          
+      - name: Install cross-compilation tools (RISC-V)
+        if: matrix.platform.target == 'riscv64gc-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-riscv64-linux-gnu
+      
+      # 设置交叉编译环境变量
+      - name: Setup cross-compilation environment
+        run: |
+          case "${{ matrix.platform.target }}" in
+            powerpc64le-unknown-linux-gnu)
+              echo "CC=powerpc64le-linux-gnu-gcc" >> $GITHUB_ENV
+              echo "CXX=powerpc64le-linux-gnu-g++" >> $GITHUB_ENV
+              ;;
+            s390x-unknown-linux-gnu)
+              echo "CC=s390x-linux-gnu-gcc" >> $GITHUB_ENV
+              echo "CXX=s390x-linux-gnu-g++" >> $GITHUB_ENV
+              ;;
+            riscv64gc-unknown-linux-gnu)
+              echo "CC=riscv64-linux-gnu-gcc" >> $GITHUB_ENV
+              echo "CXX=riscv64-linux-gnu-g++" >> $GITHUB_ENV
+              ;;
+            armv7-unknown-linux-gnueabihf)
+              echo "CC=arm-linux-gnueabihf-gcc" >> $GITHUB_ENV
+              echo "CXX=arm-linux-gnueabihf-g++" >> $GITHUB_ENV
+              ;;
+            aarch64-unknown-linux-gnu|aarch64-unknown-linux-musl)
+              echo "CC=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+              echo "CXX=aarch64-linux-gnu-g++" >> $GITHUB_ENV
+              ;;
+          esac
       
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target ${{ matrix.platform.target }}
+        run: cargo build --release --target ${{ matrix.platform.target }}
+        continue-on-error: ${{ contains(matrix.platform.target, 'freebsd') || contains(matrix.platform.target, 'riscv') }}
       
       - name: Package
         shell: bash
         run: |
           cd target/${{ matrix.platform.target }}/release
-          tar -czf ${{ matrix.platform.asset_name }}.tar.gz ${{ matrix.platform.binary_name }}
-          echo "ASSET_PATH=target/${{ matrix.platform.target }}/release/${{ matrix.platform.asset_name }}.tar.gz" >> $GITHUB_ENV
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            7z a ${{ matrix.platform.asset_name }}.zip ${{ matrix.platform.binary_name }}
+            echo "ASSET_PATH=target/${{ matrix.platform.target }}/release/${{ matrix.platform.asset_name }}.zip" >> $GITHUB_ENV
+          else
+            tar -czf ${{ matrix.platform.asset_name }}.tar.gz ${{ matrix.platform.binary_name }}
+            echo "ASSET_PATH=target/${{ matrix.platform.target }}/release/${{ matrix.platform.asset_name }}.tar.gz" >> $GITHUB_ENV
+          fi
       
       - name: Upload binaries to release
         uses: softprops/action-gh-release@v2
