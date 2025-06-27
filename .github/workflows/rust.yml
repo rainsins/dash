@@ -1,214 +1,207 @@
+# Workflow name
 name: Release
 
+# Trigger: Runs only when a new tag starting with 'v' is pushed.
 on:
   push:
     tags:
       - 'v*'
 
-      
 jobs:
+  # ===================================================================
+  # JOB 1: Build binaries for all platforms in parallel
+  # ===================================================================
   build:
-    name: Build ${{ matrix.platform.name }}
+    name: Build on ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.os }}
     strategy:
-      fail-fast: false # 允许部分构建失败
+      fail-fast: false # Allows other jobs to continue even if one fails
       matrix:
         platform:
-        # ===================================================================
-        # 1. 主流桌面平台 (Intel/AMD 64-bit)
-        # ===================================================================
-        - name: Windows x64 (MSVC)
-          os: windows-latest
-          target: x86_64-pc-windows-msvc
-          binary_name: dash.exe
-          asset_name: dash-x86_64-windows-msvc.exe
-        - name: macOS x64 (Intel)
-          os: macos-13 # 使用 Intel 芯片的 runner
-          target: x86_64-apple-darwin
-          binary_name: dash
-          asset_name: dash-x86_64-apple-darwin
-        - name: Linux x64 (GNU)
-          os: ubuntu-latest
-          target: x86_64-unknown-linux-gnu
-          binary_name: dash
-          asset_name: dash-x86_64-linux-gnu
-        - name: Linux x64 (musl)
-          os: ubuntu-latest
-          target: x86_64-unknown-linux-musl
-          binary_name: dash
-          asset_name: dash-x86_64-linux-musl
-        # ===================================================================
-        # 2. 主流ARM平台 (ARM64 / AArch64)
-        # ===================================================================
-        - name: Windows ARM64 (MSVC)
-          os: windows-latest
-          target: aarch64-pc-windows-msvc
-          binary_name: dash.exe
-          asset_name: dash-aarch64-windows-msvc.exe
-        - name: macOS ARM64 (Apple Silicon)
-          os: macos-latest # GitHub 现在默认使用 M1 runner
-          target: aarch64-apple-darwin
-          binary_name: dash
-          asset_name: dash-aarch64-apple-darwin
-        - name: Linux ARM64 (GNU)
-          os: ubuntu-latest
-          target: aarch64-unknown-linux-gnu
-          binary_name: dash
-          asset_name: dash-aarch64-linux-gnu
-        - name: Linux ARM64 (musl)
-          os: ubuntu-latest
-          target: aarch64-unknown-linux-musl
-          binary_name: dash
-          asset_name: dash-aarch64-linux-musl
-        # ===================================================================
-        # 3. 32位架构 (Legacy & Embedded)
-        # ===================================================================
-        - name: Windows x86 (MSVC)
-          os: windows-latest
-          target: i686-pc-windows-msvc
-          binary_name: dash.exe
-          asset_name: dash-i686-windows-msvc.exe
-        - name: Linux x86 (GNU)
-          os: ubuntu-latest
-          target: i686-unknown-linux-gnu
-          binary_name: dash
-          asset_name: dash-i686-linux-gnu
-        - name: Linux ARMv7 (GNU)
-          os: ubuntu-latest
-          target: armv7-unknown-linux-gnueabihf
-          binary_name: dash
-          asset_name: dash-armv7-linux-gnueabihf
-        # ===================================================================
-        # 4. Windows GNU 工具链 (MinGW)
-        # ===================================================================
-        - name: Windows x64 (GNU)
-          os: windows-latest
-          target: x86_64-pc-windows-gnu
-          binary_name: dash.exe
-          asset_name: dash-x86_64-windows-gnu.exe
-        - name: Windows x86 (GNU)
-          os: windows-latest
-          target: i686-pc-windows-gnu
-          binary_name: dash.exe
-          asset_name: dash-i686-windows-gnu.exe
-        # ===================================================================
-        # 5. 其他服务器/新兴架构 (需要交叉编译)
-        # ===================================================================
-        - name: Linux PowerPC64 (GNU)
-          os: ubuntu-latest
-          target: powerpc64le-unknown-linux-gnu
-          binary_name: dash
-          asset_name: dash-powerpc64le-linux-gnu # IBM Power 服务器
-        - name: Linux IBM Z (GNU)
-          os: ubuntu-latest
-          target: s390x-unknown-linux-gnu
-          binary_name: dash
-          asset_name: dash-s390x-linux-gnu # IBM Z 主机
-        - name: Linux RISC-V 64-bit (GNU)
-          os: ubuntu-latest
-          target: riscv64gc-unknown-linux-gnu
-          binary_name: dash
-          asset_name: dash-riscv64gc-linux-gnu # 新兴的RISC-V架构
-        # ===================================================================
-        # 6. 其他操作系统 (需要交叉编译)
-        # ===================================================================
-        - name: FreeBSD x64
-          os: ubuntu-latest # 使用Linux runner进行交叉编译
-          target: x86_64-unknown-freebsd
-          binary_name: dash
-          asset_name: dash-x86_64-freebsd
+          # --- Mainstream Desktop (x86_64) ---
+          - name: Windows x64 (MSVC)
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary_name: dash.exe
+            asset_name: dash-x86_64-windows-msvc
+          - name: macOS x64 (Intel)
+            os: macos-13 # Explicitly use an Intel-based runner
+            target: x86_64-apple-darwin
+            binary_name: dash
+            asset_name: dash-x86_64-apple-darwin
+          - name: Linux x64 (GNU)
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary_name: dash
+            asset_name: dash-x86_64-linux-gnu
+          - name: Linux x64 (musl)
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            binary_name: dash
+            asset_name: dash-x86_64-linux-musl
+
+          # --- Mainstream ARM (AArch64) ---
+          - name: Windows ARM64 (MSVC)
+            os: windows-latest
+            target: aarch64-pc-windows-msvc
+            binary_name: dash.exe
+            asset_name: dash-aarch64-windows-msvc
+          - name: macOS ARM64 (Apple Silicon)
+            os: macos-14 # Explicitly use an ARM-based runner (M1/M2)
+            target: aarch64-apple-darwin
+            binary_name: dash
+            asset_name: dash-aarch64-apple-darwin
+          - name: Linux ARM64 (GNU)
+            os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            binary_name: dash
+            asset_name: dash-aarch64-linux-gnu
+          - name: Linux ARM64 (musl)
+            os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            binary_name: dash
+            asset_name: dash-aarch64-linux-musl
+
+          # --- 32-bit Architectures ---
+          - name: Windows x86 (MSVC)
+            os: windows-latest
+            target: i686-pc-windows-msvc
+            binary_name: dash.exe
+            asset_name: dash-i686-windows-msvc
+          - name: Linux x86 (GNU)
+            os: ubuntu-latest
+            target: i686-unknown-linux-gnu
+            binary_name: dash
+            asset_name: dash-i686-linux-gnu
+          - name: Linux ARMv7 (GNU)
+            os: ubuntu-latest
+            target: armv7-unknown-linux-gnueabihf
+            binary_name: dash
+            asset_name: dash-armv7-linux-gnueabihf
+
+          # --- Windows GNU Toolchain (MinGW) ---
+          - name: Windows x64 (GNU)
+            os: windows-latest
+            target: x86_64-pc-windows-gnu
+            binary_name: dash.exe
+            asset_name: dash-x86_64-windows-gnu
+          - name: Windows x86 (GNU)
+            os: windows-latest
+            target: i686-pc-windows-gnu
+            binary_name: dash.exe
+            asset_name: dash-i686-windows-gnu
+
+          # --- Other Architectures (Experimental) ---
+          - name: Linux PowerPC64 (GNU)
+            os: ubuntu-latest
+            target: powerpc64le-unknown-linux-gnu
+            binary_name: dash
+            asset_name: dash-powerpc64le-linux-gnu
+            experimental: true
+          - name: Linux IBM Z (GNU)
+            os: ubuntu-latest
+            target: s390x-unknown-linux-gnu
+            binary_name: dash
+            asset_name: dash-s390x-linux-gnu
+            experimental: true
+          - name: Linux RISC-V 64-bit (GNU)
+            os: ubuntu-latest
+            target: riscv64gc-unknown-linux-gnu
+            binary_name: dash
+            asset_name: dash-riscv64gc-linux-gnu
+            experimental: true
+          - name: FreeBSD x64
+            os: ubuntu-latest
+            target: x86_64-unknown-freebsd
+            binary_name: dash
+            asset_name: dash-x86_64-freebsd
+            experimental: true
 
     steps:
+      # 1. Checkout repository code
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
+      # 2. Install Rust toolchain for the specified target
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform.target }}
-      
-      # 为某些目标安装交叉编译工具
-      - name: Install cross-compilation tools (musl)
-        if: contains(matrix.platform.target, 'musl')
+
+      # 3. CONSOLIDATED: Install all necessary cross-compilation tools for Linux runners
+      - name: Install cross-compilation tools (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y musl-tools
-          
-      - name: Install cross-compilation tools (ARM)
-        if: contains(matrix.platform.target, 'arm') || contains(matrix.platform.target, 'aarch64')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu
-          
-      - name: Install cross-compilation tools (i686)
-        if: matrix.platform.target == 'i686-unknown-linux-gnu'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-multilib
-          
-      - name: Install cross-compilation tools (PowerPC64)
-        if: matrix.platform.target == 'powerpc64le-unknown-linux-gnu'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-powerpc64le-linux-gnu
-          
-      - name: Install cross-compilation tools (IBM Z)
-        if: matrix.platform.target == 's390x-unknown-linux-gnu'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-s390x-linux-gnu
-          
-      - name: Install cross-compilation tools (RISC-V)
-        if: matrix.platform.target == 'riscv64gc-unknown-linux-gnu'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-riscv64-linux-gnu
-      
-      # 设置交叉编译环境变量
-      - name: Setup cross-compilation environment
-        run: |
-          case "${{ matrix.platform.target }}" in
-            powerpc64le-unknown-linux-gnu)
-              echo "CC=powerpc64le-linux-gnu-gcc" >> $GITHUB_ENV
-              echo "CXX=powerpc64le-linux-gnu-g++" >> $GITHUB_ENV
-              ;;
-            s390x-unknown-linux-gnu)
-              echo "CC=s390x-linux-gnu-gcc" >> $GITHUB_ENV
-              echo "CXX=s390x-linux-gnu-g++" >> $GITHUB_ENV
-              ;;
-            riscv64gc-unknown-linux-gnu)
-              echo "CC=riscv64-linux-gnu-gcc" >> $GITHUB_ENV
-              echo "CXX=riscv64-linux-gnu-g++" >> $GITHUB_ENV
-              ;;
-            armv7-unknown-linux-gnueabihf)
-              echo "CC=arm-linux-gnueabihf-gcc" >> $GITHUB_ENV
-              echo "CXX=arm-linux-gnueabihf-g++" >> $GITHUB_ENV
-              ;;
-            aarch64-unknown-linux-gnu|aarch64-unknown-linux-musl)
-              echo "CC=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
-              echo "CXX=aarch64-linux-gnu-g++" >> $GITHUB_ENV
-              ;;
-          esac
-      
+          sudo apt-get install -y \
+            musl-tools \
+            gcc-multilib \
+            gcc-arm-linux-gnueabihf \
+            gcc-aarch64-linux-gnu \
+            gcc-powerpc64le-linux-gnu \
+            gcc-s390x-linux-gnu \
+            gcc-riscv64-linux-gnu
+
+      # 4. Build the binary
       - name: Build
-        run: cargo build --release --target ${{ matrix.platform.target }}
-        continue-on-error: ${{ contains(matrix.platform.target, 'freebsd') || contains(matrix.platform.target, 'riscv') }}
-      
-      - name: Package
+        run: cargo build --verbose --release --target ${{ matrix.platform.target }}
+        # Use the 'experimental' flag from the matrix to allow certain builds to fail
+        continue-on-error: ${{ matrix.platform.experimental || false }}
+
+      # 5. Package the binary into a compressed archive (.zip or .tar.gz)
+      - name: Package binary
         shell: bash
         run: |
-          cd target/${{ matrix.platform.target }}/release
+          # Define the source path for the binary
+          SOURCE_PATH="target/${{ matrix.platform.target }}/release/${{ matrix.platform.binary_name }}"
+          
+          # Define the name of the final archive file
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            7z a ${{ matrix.platform.asset_name }}.zip ${{ matrix.platform.binary_name }}
-            echo "ASSET_PATH=target/${{ matrix.platform.target }}/release/${{ matrix.platform.asset_name }}.zip" >> $GITHUB_ENV
+            ARCHIVE_NAME="${{ matrix.platform.asset_name }}.zip"
+            7z a "$ARCHIVE_NAME" "$SOURCE_PATH"
           else
-            tar -czf ${{ matrix.platform.asset_name }}.tar.gz ${{ matrix.platform.binary_name }}
-            echo "ASSET_PATH=target/${{ matrix.platform.target }}/release/${{ matrix.platform.asset_name }}.tar.gz" >> $GITHUB_ENV
+            ARCHIVE_NAME="${{ matrix.platform.asset_name }}.tar.gz"
+            tar -czf "$ARCHIVE_NAME" -C "target/${{ matrix.platform.target }}/release" "${{ matrix.platform.binary_name }}"
           fi
-      
-      - name: Upload binaries to release
+          
+          # Store the archive name for the next step
+          echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
+
+      # 6. Upload the packaged binary as a build artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.platform.target }}
+          path: ${{ env.ARCHIVE_NAME }}
+
+  # ===================================================================
+  # JOB 2: Create a single GitHub Release after all builds are done
+  # ===================================================================
+  release:
+    name: Create GitHub Release
+    # This job runs only after all 'build' jobs have successfully completed
+    needs: build
+    runs-on: ubuntu-latest
+    # This job needs write permissions to create a release
+    permissions:
+      contents: write
+
+    steps:
+      # 1. Download all build artifacts (the packaged binaries) from the 'build' job
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          # The destination directory for downloaded artifacts
+          path: release-artifacts
+          # Use a pattern to download all artifacts that were uploaded
+          pattern: binary-*
+          merge-multiple: true # Merges artifacts into a single directory
+
+      # 2. Create the final release and upload all artifacts as release assets
+      - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.ASSET_PATH }}
+          # Find all downloaded archives and upload them
+          files: release-artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
